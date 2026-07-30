@@ -49,10 +49,40 @@ The public behavior contract remained unchanged during the focused refactor:
 ## Break Test evidence
 
 ### Break Test 1 — Completed past-due task
-A deliberately incorrect implementation defined overdue as only `due_date < today`. The overdue-filter test failed because it returned both `Late open` and `Late done`. The rule was corrected by adding `status != "done"` to both response computation and database filtering.
+The database overdue filter in `app/main.py` was temporarily changed from:
+
+```python
+and_(Task.due_date < date.today(), Task.status != "done")
+```
+
+to the intentionally incorrect condition:
+
+```python
+Task.due_date < date.today()
+```
+
+Command used:
+
+```bash
+python -m pytest -v tests/test_tasks.py::test_overdue_filter_returns_only_open_overdue_tasks
+```
+
+The captured failing run is saved in `evidence/break-test-overdue-failure.txt`. It reports `FAILED` and shows that the API returned `['Late done', 'Late open']` instead of only `['Late open']`. After restoring the status exclusion, the same test passed; that output is saved in `evidence/break-test-overdue-restored.txt`.
 
 ### Break Test 2 — Partial tag match
-A deliberately weak filter used `Task.tags.contains("api")`. The regression test failed because it returned both `API task` and `Capital task`. The filter was replaced with exact whole-field and comma-boundary comparisons.
+The exact comma-boundary tag filter in `app/main.py` was temporarily replaced with:
+
+```python
+Task.tags.contains(normalized)
+```
+
+Command used:
+
+```bash
+python -m pytest -v tests/test_tasks.py::test_filter_by_exact_tag_does_not_match_partial_tag
+```
+
+The captured failing run is saved in `evidence/break-test-tags-failure.txt`. It reports `FAILED` and shows that filtering for `api` returned `['Capital task', 'API task']` instead of only `['API task']`. After restoring exact whole-field and comma-boundary matching, the same test passed; that output is saved in `evidence/break-test-tags-restored.txt`.
 
 ## Known limitations
 - Tags are stored as a normalized comma-separated field rather than a relational table.
