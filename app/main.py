@@ -14,8 +14,8 @@ from .schemas import TaskCreate, TaskRead, TaskUpdate
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI-Assisted Task Tracker", version="1.0.0")
-STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
 def task_to_read(task: Task) -> TaskRead:
@@ -37,7 +37,7 @@ def task_to_read(task: Task) -> TaskRead:
 
 @app.get("/", include_in_schema=False)
 def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 @app.get("/api/health")
