@@ -2,39 +2,67 @@
 
 ## AGENTS.md guardrail confirmation
 
-Before accepting AI-assisted changes, I checked them against `AGENTS.md`.
+I reviewed the repository using the guidance in `AGENTS.md` before making final changes. I confirmed that required project files were present, the repository structure matched the assignment requirements, and changes remained limited to the final-project deliverables. I manually reviewed every AI-generated change before committing it.
 
-- **Scoped changes:** the work only adds release hardening, evidence, and the required `frontend/` path; it does not replace the framework or database.
-- **No secrets or generated state:** no credentials, `.env` files, virtual environments, caches, or SQLite database files are included.
-- **Tests and packaging checks:** `pytest -v` was run locally, and CI now builds and starts the Docker image before checking `/api/health`.
-- **Behavior preserved:** exact-tag filtering and the rule that completed tasks are not overdue remain covered by `tests/test_tasks.py`.
-- **Documentation synchronized:** README, CI, Docker instructions, and evidence documents describe the current repository structure.
+---
 
 ## AI code review mini-log
 
-| AI review comment | Grade | Reason and decision |
-|---|---|---|
-| “Renaming `static/` to `frontend/` requires updating the FastAPI filesystem path.” | **Useful** | Confirmed in `app/main.py`: `FRONTEND_DIR` now points to `frontend/`. The `/static` URL mount remains intentionally unchanged because it is a URL path, not the folder name. |
-| “Replace SQLite with PostgreSQL before release.” | **Noise** | This is outside the course scope and would add infrastructure without improving the required deliverables. SQLite is retained and its container persistence limitation is documented. |
-| “The original Docker CI job proves runtime health because the image builds successfully.” | **Wrong** | A successful build does not prove the process starts or that `/api/health` responds. The workflow was corrected to run a container, poll the endpoint, assert HTTP 200, and record the response. |
-| “Use `innerHTML` directly for task titles and descriptions.” | **Wrong** | User-controlled values must be escaped. `frontend/app.js` keeps `escapeHtml()` around title, description, and tags. |
+| AI Comment | Grade | Reason |
+|------------|-------|--------|
+| Rename `static/` to `frontend/` to match the assignment requirements. | Useful | This was a genuine assignment requirement and improved compliance. |
+| Add a Docker health check to the CI workflow. | Useful | The original workflow only built the image. Adding a runtime check satisfied the project requirement. |
+| Replace placeholder evidence in the documentation with observed results. | Useful | This improved the quality and accuracy of the release documentation. |
+| Rewrite several comments for consistency. | Noise | These changes were stylistic and did not improve correctness or functionality. |
+
+---
 
 ## AI security mini-review
 
-| Finding with file evidence | Grade | Reason | Next action |
-|---|---|---|---|
-| `frontend/app.js` renders task fields inside template strings, which can create an XSS risk. | **Valid** | The risk is real when using `innerHTML`, but the current implementation applies `escapeHtml()` to title, description, and every tag before insertion. | Keep the escaping function and add a frontend security test if a browser test framework is introduced. |
-| `app/database.py` uses `sqlite:///./task_tracker.db`, so container data is stored in the writable container layer. | **Valid** | Data is lost when an ephemeral container is removed unless a volume is mounted. This is a durability issue, not a secret exposure. | Document volume usage for persistent deployments or move the database URL to configuration in a later production-focused iteration. |
-| `app/main.py` uses SQLAlchemy query expressions built from request parameters and may be vulnerable to SQL injection. | **False Positive** | The filters use SQLAlchemy expressions and bound parameters rather than concatenating raw SQL. | No code change required; continue avoiding raw SQL constructed from user input. |
-| `Dockerfile` exposes port 8000, which exposes the application publicly. | **Noise** | `EXPOSE` is metadata and does not publish a port by itself. Publishing is controlled by the runtime command or deployment platform. | No change required. |
-| `Dockerfile` might run as root. | **False Positive** | The file creates `appuser` with UID 10001 and switches with `USER appuser` before startup. | Keep the non-root user and verify it if container security tests are added. |
+| Finding | File Evidence | Grade | Reason | Next Action |
+|---------|---------------|-------|--------|-------------|
+| No secrets are committed to the repository. | Repository review | Valid | No API keys or credentials were found. | Continue checking before every release. |
+| Debug mode should not be enabled in production. | `app/main.py` | Valid | Development settings should not be used for production deployments. | Keep production configuration separate. |
+| User input should always be validated. | `app/main.py` | Valid | Validation reduces the risk of malformed requests. | Continue using FastAPI validation. |
+| Missing authentication. | Entire project | False Positive | Authentication is outside the scope of this coursework project. | No action required for this assignment. |
+
+---
+
+## Manual security check
+
+After completing the AI-assisted review, I manually inspected the project for common security issues.
+
+Checks performed:
+
+- Verified that no passwords, API keys, or secrets are stored in the repository.
+- Confirmed that the application only exposes the expected endpoints.
+- Confirmed that no sensitive files are included in the Docker image.
+- Reviewed the `.gitignore` and `.dockerignore` files.
+- Verified that the Docker container exposes only the required application port.
+- Confirmed the `/api/health` endpoint returns only a simple status response and does not leak sensitive information.
+
+No additional security issues were found during the manual review.
+
+---
+
+## One AI output I rejected or corrected
+
+One AI suggestion recommended documenting Docker verification using expected output because Docker was unavailable locally.
+
+I rejected this suggestion because the assignment required observed evidence rather than expected behaviour.
+
+Instead, I updated the GitHub Actions workflow so it actually builds the Docker image, starts the container, verifies that `/api/health` returns HTTP 200 with `{"status":"ok"}`, and then linked the successful GitHub Actions run as evidence.
+
+---
 
 ## Three AI usage rules
 
-1. **Verify every generated claim:** compare AI output with source files, tests, commands, endpoint responses, or CI output before documenting it as true.
-2. **Reject unnecessary scope:** do not accept framework migrations, infrastructure changes, or complexity that is unrelated to the stated requirement.
-3. **Treat security feedback as hypotheses:** grade each finding using file evidence, explain why it is valid or not, and record a concrete next action.
+1. Never accept AI-generated code without reading and understanding it first.
+2. Always verify AI-generated documentation against the actual repository and application behaviour.
+3. Use AI to speed up development, but make the final technical decisions myself.
+
+---
 
 ## Ownership statement
 
-I reviewed and accepted responsibility for every file in this submission. AI helped identify missing deliverables, draft configurations, and structure the evidence, but I checked those suggestions against the repository and observed application behavior. I corrected the Docker workflow after recognizing that image build success alone did not prove runtime health. I understand the application, its tests, its packaging, and the remaining SQLite persistence limitation. I would be able to explain or modify these changes without relying on the original AI output.
+Although AI assisted with brainstorming, reviewing code, improving documentation, and identifying missing assignment requirements, I reviewed every suggested change before accepting it. I verified the application by running the tests, checking the API endpoints, and confirming that the required project files were present. I corrected AI suggestions when they did not satisfy the assignment requirements, particularly around release evidence and Docker verification. I take responsibility for the final implementation, documentation, testing, and submission of this project.
