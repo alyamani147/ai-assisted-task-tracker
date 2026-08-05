@@ -1,45 +1,40 @@
 # Final AI Review
 
-## How AI assistance was used
+## AGENTS.md guardrail confirmation
 
-AI assistance was used to compare the repository against the final-project checklist, identify missing release artifacts, propose CI and Docker configuration, update paths after the frontend directory rename, and draft documentation. Each generated change was reviewed against the existing source and tests before acceptance.
+Before accepting AI-assisted changes, I checked them against `AGENTS.md`.
 
-## Accepted output
+- **Scoped changes:** the work only adds release hardening, evidence, and the required `frontend/` path; it does not replace the framework or database.
+- **No secrets or generated state:** no credentials, `.env` files, virtual environments, caches, or SQLite database files are included.
+- **Tests and packaging checks:** `pytest -v` was run locally, and CI now builds and starts the Docker image before checking `/api/health`.
+- **Behavior preserved:** exact-tag filtering and the rule that completed tasks are not overdue remain covered by `tests/test_tasks.py`.
+- **Documentation synchronized:** README, CI, Docker instructions, and evidence documents describe the current repository structure.
 
-- A GitHub Actions workflow that runs tests, verifies required files, and builds the container.
-- A non-root Docker image with a health check.
-- A `.dockerignore` that excludes local, generated, sensitive, and assessment-only files.
-- `AGENTS.md` with repository-specific working rules.
-- Final-project evidence and playbook documents.
-- The `static/` to `frontend/` rename and matching FastAPI path update.
-- A README section describing final-project deliverables and verification steps.
+## AI code review mini-log
 
-## Output edited after review
+| AI review comment | Grade | Reason and decision |
+|---|---|---|
+| “Renaming `static/` to `frontend/` requires updating the FastAPI filesystem path.” | **Useful** | Confirmed in `app/main.py`: `FRONTEND_DIR` now points to `frontend/`. The `/static` URL mount remains intentionally unchanged because it is a URL path, not the folder name. |
+| “Replace SQLite with PostgreSQL before release.” | **Noise** | This is outside the course scope and would add infrastructure without improving the required deliverables. SQLite is retained and its container persistence limitation is documented. |
+| “The original Docker CI job proves runtime health because the image builds successfully.” | **Wrong** | A successful build does not prove the process starts or that `/api/health` responds. The workflow was corrected to run a container, poll the endpoint, assert HTTP 200, and record the response. |
+| “Use `innerHTML` directly for task titles and descriptions.” | **Wrong** | User-controlled values must be escaped. `frontend/app.js` keeps `escapeHtml()` around title, description, and tags. |
 
-Generated material was adapted to this repository rather than accepted blindly. The workflow uses the actual `requirements.txt` and `pytest` command. The Dockerfile copies the actual `app/` and `frontend/` directories and runs the existing `uvicorn app.main:app` entry point. Documentation describes only behavior present in the codebase.
+## AI security mini-review
 
-## Output rejected or avoided
+| Finding with file evidence | Grade | Reason | Next action |
+|---|---|---|---|
+| `frontend/app.js` renders task fields inside template strings, which can create an XSS risk. | **Valid** | The risk is real when using `innerHTML`, but the current implementation applies `escapeHtml()` to title, description, and every tag before insertion. | Keep the escaping function and add a frontend security test if a browser test framework is introduced. |
+| `app/database.py` uses `sqlite:///./task_tracker.db`, so container data is stored in the writable container layer. | **Valid** | Data is lost when an ephemeral container is removed unless a volume is mounted. This is a durability issue, not a secret exposure. | Document volume usage for persistent deployments or move the database URL to configuration in a later production-focused iteration. |
+| `app/main.py` uses SQLAlchemy query expressions built from request parameters and may be vulnerable to SQL injection. | **False Positive** | The filters use SQLAlchemy expressions and bound parameters rather than concatenating raw SQL. | No code change required; continue avoiding raw SQL constructed from user input. |
+| `Dockerfile` exposes port 8000, which exposes the application publicly. | **Noise** | `EXPOSE` is metadata and does not publish a port by itself. Publishing is controlled by the runtime command or deployment platform. | No change required. |
+| `Dockerfile` might run as root. | **False Positive** | The file creates `appuser` with UID 10001 and switches with `USER appuser` before startup. | Keep the non-root user and verify it if container security tests are added. |
 
-- No new framework, database, frontend build system, or deployment platform was added because it was outside scope.
-- No credentials or placeholder secrets were added.
-- No unsupported claim of a successful remote GitHub Actions run was made; local tests and the workflow definition are separate evidence.
-- No application behavior was rewritten merely to make the repository look more complex.
+## Three AI usage rules
 
-## Risks identified
+1. **Verify every generated claim:** compare AI output with source files, tests, commands, endpoint responses, or CI output before documenting it as true.
+2. **Reject unnecessary scope:** do not accept framework migrations, infrastructure changes, or complexity that is unrelated to the stated requirement.
+3. **Treat security feedback as hypotheses:** grade each finding using file evidence, explain why it is valid or not, and record a concrete next action.
 
-1. SQLite writes inside an ephemeral container are not durable unless a volume is mounted.
-2. The application creates tables at startup rather than using migrations; this is acceptable for the course project but not ideal for a larger production system.
-3. CI proves build and automated-test health, but browser-level end-to-end tests are not included.
-4. Date-based overdue behavior depends on the server date.
+## Ownership statement
 
-## Human validation performed
-
-- Checked every required filename and directory against the feedback.
-- Reviewed application imports and frontend asset paths after the rename.
-- Preserved the existing API contract and tests.
-- Confirmed that release documentation does not claim features absent from the code.
-- Kept generated files, local databases, and secrets out of version control and Docker context.
-
-## Final judgment
-
-The AI-generated suggestions were useful as a checklist and drafting accelerator, but completion depended on repository inspection, path-aware edits, test execution, and human judgment about scope and evidence quality.
+I reviewed and accepted responsibility for every file in this submission. AI helped identify missing deliverables, draft configurations, and structure the evidence, but I checked those suggestions against the repository and observed application behavior. I corrected the Docker workflow after recognizing that image build success alone did not prove runtime health. I understand the application, its tests, its packaging, and the remaining SQLite persistence limitation. I would be able to explain or modify these changes without relying on the original AI output.
