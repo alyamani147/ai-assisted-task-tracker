@@ -55,7 +55,7 @@ pytest -v
 
 The Final Project extends the fully fixed mid-course application with release-focused deliverables:
 
-- `.github/workflows/ci.yml` runs tests, verifies required artifacts, and builds the Docker image.
+- `.github/workflows/ci.yml` runs tests, verifies required artifacts, builds and starts the Docker image, and requires HTTP 200 from `/api/health`.
 - `Dockerfile` packages the FastAPI application and frontend in a non-root container with a health check.
 - `.dockerignore` keeps local, generated, sensitive, and assessment-only files out of the build context.
 - `AGENTS.md` gives coding agents repository-specific rules and a definition of done.
@@ -84,6 +84,9 @@ http://127.0.0.1:8000/docs
 ```bash
 pytest -v
 docker build -t ai-assisted-task-tracker .
+docker run --rm -d --name task-tracker-check -p 8000:8000 ai-assisted-task-tracker
+curl -i http://127.0.0.1:8000/api/health
+docker rm -f task-tracker-check
 git status --short
 ```
 
