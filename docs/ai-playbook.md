@@ -1,79 +1,65 @@
-# AI-Assisted Development Playbook
+# AI Playbook
 
-## 1. Establish the baseline
+## When I reach for AI first
 
-Before asking AI to change code:
+I use AI when I need help understanding an unfamiliar concept, generating ideas, explaining error messages, improving documentation, reviewing code for potential issues, or checking whether my project meets assignment requirements. AI is also useful for suggesting better code structure and helping write tests.
 
-```bash
-git status
-pytest -v
-find . -maxdepth 3 -type f | sort
-```
+---
 
-Record what already works and identify the exact acceptance criteria.
+## When I do not reach for AI first
 
-## 2. Give grounded prompts
+I do not rely on AI when I need to understand how my own code works, verify application behaviour, debug issues that require running the program, or make final decisions about implementation. I prefer to investigate these manually before asking AI for suggestions.
 
-Include the relevant file contents, failing output, expected behavior, constraints, and definition of done. Ask for a small patch rather than a broad rewrite.
+---
 
-Example:
+## My non-negotiables
 
-> The FastAPI app currently serves assets from `static/`, but the assignment requires `frontend/`. Rename the directory, update only the necessary path references, preserve `/static/...` browser URLs, and identify tests or checks needed to prove nothing broke.
+- I always read AI-generated code before using it.
+- I always run the application and tests myself.
+- I never claim that something was verified unless I actually observed it.
+- I check that documentation matches the current repository.
+- I take responsibility for every change included in the final submission.
 
-## 3. Inspect before accepting
+---
 
-Review generated changes for:
+## My review rules
 
-- invented files, dependencies, commands, or APIs;
-- accidental behavior changes;
-- missing error handling or validation;
-- secrets or machine-specific paths;
-- documentation claims not supported by code;
-- unnecessary complexity.
+Before accepting AI-generated work, I check that:
 
-## 4. Test from evidence
+- the code compiles and runs correctly;
+- all tests pass;
+- documentation reflects the current implementation;
+- file names and project structure match the assignment requirements;
+- unnecessary or incorrect AI suggestions are removed.
 
-Run the narrowest relevant test first, then the full suite:
+---
 
-```bash
-pytest -v tests/test_tasks.py
-pytest -v
-```
+## What I am still figuring out
 
-For packaging changes:
+I am still learning how to write better prompts that produce more accurate code on the first attempt. I also want to improve my ability to recognise when AI suggestions are incorrect or incomplete without relying on multiple iterations.
 
-```bash
-docker build -t ai-assisted-task-tracker .
-docker run --rm -p 8000:8000 ai-assisted-task-tracker
-```
+---
 
-Verify `/`, `/api/health`, and `/docs` manually when possible.
+## Decision Card
 
-## 5. Use deliberate break tests
+**Task:** Fix missing final-project deliverables.
 
-Temporarily introduce a controlled fault, confirm the test catches it, then restore the correct implementation and rerun the suite. This demonstrates that tests are meaningful rather than merely green.
+**Could AI help?**
+Yes.
 
-## 6. Keep an acceptance log
+**Why?**
+AI can identify missing files, explain assignment requirements, suggest documentation improvements, and review repository structure more quickly than doing everything manually.
 
-For each meaningful AI suggestion, record whether it was:
+**What I verified myself**
 
-- accepted unchanged;
-- accepted after editing;
-- rejected;
-- deferred, with the reason.
+- The application runs successfully.
+- All tests pass.
+- The API health endpoint returns HTTP 200.
+- The frontend loads correctly.
+- The required files exist.
+- GitHub Actions completed successfully.
+- Docker verification was performed by the CI workflow.
 
-## 7. Protect the repository
+**Final decision**
 
-Before committing:
-
-```bash
-git diff --check
-git status --short
-pytest -v
-```
-
-Confirm that `.env`, tokens, database files, virtual environments, caches, and editor settings are not staged.
-
-## 8. Complete the release checklist
-
-A release is ready when application tests pass, CI exists, the container builds, required documents are present, README instructions are accurate, and the branch contains only intentional changes.
+I accepted AI suggestions only after manually reviewing them, running the application, checking the documentation, and confirming that the repository satisfied the assignment requirements.
